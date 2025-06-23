@@ -18,7 +18,7 @@ Upload an image of a space station (or test with samples)
 
 The model will automatically detect objects
 
-View results with bounding boxes and confidence score
+View results of objects detected and their confidence scores
 
 # Model Details
 
