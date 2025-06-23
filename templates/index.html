@@ -4,33 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YOLOv8 Object Detection</title>
-    <link rel="stylesheet" href="../static/css/style.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <div class="container">
         <h1>Training Assistant for Space Cadets</h1>
-        
+
         <div class="upload-section">
             <input type="file" id="imageInput" accept="image/*">
             <button id="predictBtn">Detect Objects</button>
         </div>
-        
+
         <div class="results">
             <div class="image-container">
                 <div class="image-box">
-                    <h3>Original Image</h3>
+                    <h3>Uploaded Image</h3>
                     <img id="originalImage" class="preview-image">
                 </div>
-                <div class="image-box">
-                    <h3>Detection Results</h3>
-                    <img id="resultImage" class="preview-image">
-                </div>
             </div>
-            
+
             <div id="detectionResults"></div>
         </div>
     </div>
 
-    <script src="/static/js/script.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

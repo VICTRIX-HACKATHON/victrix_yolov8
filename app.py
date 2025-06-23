@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, url_for
 from ultralytics import YOLO
 import cv2
 import numpy as np
@@ -7,18 +7,17 @@ from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 
-# Configuration
 UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB limit
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
-# Load YOLOv8 model
-model = YOLO('models/best.pt')  # Ensure this path is correct
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+model_path = os.path.join(BASE_DIR, 'models', 'best.pt')
+model = YOLO(model_path)
 
 def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/')
 def home():
@@ -28,27 +27,20 @@ def home():
 def predict():
     if 'file' not in request.files:
         return jsonify({'error': 'No file uploaded'}), 400
-    
+
     file = request.files['file']
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
-    
+
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
-        
-        # Process image
+
         img = cv2.imread(filepath)
         results = model.predict(img)
-        
-        # Save results
-        result_filename = f"result_{filename}"
-        result_path = os.path.join(app.config['UPLOAD_FOLDER'], result_filename)
-        results[0].save(filename=result_path)
-        
-        # Prepare detection data
+
         detections = []
         for r in results:
             for box in r.boxes:
@@ -57,13 +49,12 @@ def predict():
                     'confidence': float(box.conf),
                     'bbox': box.xyxy[0].tolist()
                 })
-        
+
         return jsonify({
-            'original': f"uploads/{filename}",
-            'result': f"uploads/{result_filename}",
+            'original': url_for('static', filename=f"uploads/{filename}"),
             'detections': detections
         })
-    
+
     return jsonify({'error': 'File type not allowed'}), 400
 
 if __name__ == '__main__':

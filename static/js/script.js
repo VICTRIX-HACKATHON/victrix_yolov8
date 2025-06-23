@@ -2,7 +2,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const predictBtn = document.getElementById('predictBtn');
     const imageInput = document.getElementById('imageInput');
     const originalImage = document.getElementById('originalImage');
-    const resultImage = document.getElementById('resultImage');
     const resultsDiv = document.getElementById('detectionResults');
 
     predictBtn.addEventListener('click', async () => {
@@ -20,7 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData();
             formData.append('file', file);
 
-            // Display uploaded image
             originalImage.src = URL.createObjectURL(file);
             originalImage.style.display = 'block';
 
@@ -34,12 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await response.json();
-            
-            // Display results
-            resultImage.src = '/' + data.result;
-            resultImage.style.display = 'block';
 
-            // Show detection details
             if (data.detections.length > 0) {
                 resultsDiv.innerHTML = '<h3>Detected Objects:</h3>';
                 data.detections.forEach(det => {
