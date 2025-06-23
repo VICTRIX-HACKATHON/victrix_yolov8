@@ -28,12 +28,4 @@ Detects common space station components like toolkit, oxygen cylinder and fire e
 
 Optimized for accuracy with YOLOv8 architecture
 
-# Contributing
 
-Feel free to submit PRs or open issues for:
-
-1. UI improvements
-
-2. Additional features
-
-3. Model optimization
