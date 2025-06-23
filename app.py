@@ -14,7 +14,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB limit
 
 # Load YOLOv8 model
-model = YOLO('models/yolov8s.pt')  # Ensure this path is correct
+model = YOLO('models/best.pt')  # Ensure this path is correct
 
 def allowed_file(filename):
     return '.' in filename and \
