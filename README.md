@@ -1,6 +1,6 @@
 # Victrix YOLOv8 - Space Station Object Detection
 
-Detect objects in space station images with a simple web interface
+Detect objects in space station images with a simple web interface built on flask
 
 # 🌟 Features
 
@@ -18,7 +18,7 @@ Upload an image of a space station (or test with samples)
 
 The model will automatically detect objects
 
-View results with bounding boxes and confidence scores
+View results with bounding boxes and confidence score
 
 # Model Details
 
