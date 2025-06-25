@@ -8,25 +8,120 @@
 </head>
 <body>
     <div class="container">
-        <h1>Training Assistant for Space Cadets</h1>
+        <h1>SpaceBoot</h1>
+        <h5> Space Safety Gear Detector </h5>
+        <h5> (Use your phone's camera to point and detect objects) </h5>
 
         <div class="upload-section">
-            <input type="file" id="imageInput" accept="image/*">
-            <button id="predictBtn">Detect Objects</button>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
+                <video id="video" width="320" height="240" autoplay style="border-radius: 8px; border: 2px solid #394a6d;"></video>
+                <button id="captureBtn">Capture Image</button>
+                <span style="color: #8be9fd; font-size: 0.95rem;">or</span>
+                <input type="file" id="imageInput" accept="image/*">
+            </div>
+            <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
         </div>
 
         <div class="results">
             <div class="image-container">
                 <div class="image-box">
-                    <h3>Uploaded Image</h3>
+                    <h3>Captured/Uploaded Image</h3>
                     <img id="originalImage" class="preview-image">
                 </div>
             </div>
-
+            <div id="detectionResultsLabel" style="margin-top:18px; font-weight:bold; color:#00bcd4;">Detection Results</div>
             <div id="detectionResults"></div>
         </div>
     </div>
 
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+        // Access the camera and stream to the video element
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const captureBtn = document.getElementById('captureBtn');
+        const originalImage = document.getElementById('originalImage');
+        const imageInput = document.getElementById('imageInput');
+
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function(stream) {
+                    video.srcObject = stream;
+                    video.play();
+                })
+                .catch(function(err) {
+                    alert('Camera access denied or not available.');
+                });
+        } else {
+            alert('getUserMedia not supported in this browser.');
+        }
+
+        captureBtn.addEventListener('click', function() {
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/png');
+            originalImage.src = dataUrl;
+            showProcessing(true);
+            sendImageToModel(dataUrl);
+        });
+
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    originalImage.src = evt.target.result;
+                    showProcessing(true);
+                    sendImageToModel(evt.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function showProcessing(isProcessing) {
+            let detectionResults = document.getElementById('detectionResults');
+            let detectionResultsLabel = document.getElementById('detectionResultsLabel');
+            if (isProcessing) {
+                detectionResultsLabel.textContent = 'Detection Results';
+                detectionResults.innerHTML = '<div style="text-align:center; color:#00bcd4; font-size:1.2rem;">Processing... <span class="loader"></span></div>';
+            } else {
+                // Clear or update as needed
+            }
+        }
+
+        function sendImageToModel(imageDataUrl) {
+            fetch('/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: imageDataUrl })
+            })
+            .then(response => response.json())
+            .then(data => {
+                showProcessing(false);
+                displayDetectionResults(data);
+            })
+            .catch(err => {
+                showProcessing(false);
+                document.getElementById('detectionResults').innerHTML = '<span style="color:red;">Error processing image.</span>';
+            });
+        }
+
+        function displayDetectionResults(data) {
+            let detectionResults = document.getElementById('detectionResults');
+            let detectionResultsLabel = document.getElementById('detectionResultsLabel');
+            detectionResultsLabel.textContent = 'Detection Results';
+            if (data && data.results && data.results.length > 0) {
+                detectionResults.innerHTML = data.results.map(item =>
+                    `<div class="detection-item"><strong>${item.label}</strong>: ${item.confidence}%</div>`
+                ).join('');
+            } else {
+                detectionResults.innerHTML = '<span style="color:#ccc;">No objects detected.</span>';
+            }
+        }
+
+        // Optional: Add a simple loader animation
+        const style = document.createElement('style');
+        style.innerHTML = `.loader { display: inline-block; width: 18px; height: 18px; border: 3px solid #00bcd4; border-top: 3px solid transparent; border-radius: 50%; animation: spin 1s linear infinite; vertical-align: middle; margin-left: 8px; } @keyframes spin { 100% { transform: rotate(360deg); } }`;
+        document.head.appendChild(style);
+    </script>
 </body>
 </html>

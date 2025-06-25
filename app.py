@@ -25,37 +25,61 @@ def home():
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file uploaded'}), 400
-
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
-
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    # Handle both JSON (base64 image) and form-data (file upload)
+    if request.is_json:
+        data = request.get_json()
+        image_data = data.get('image')
+        if not image_data:
+            return jsonify({'error': 'No image data provided'}), 400
+        # Remove header if present
+        if image_data.startswith('data:image'):
+            image_data = image_data.split(',')[1]
+        import base64
+        import io
+        image_bytes = base64.b64decode(image_data)
+        npimg = np.frombuffer(image_bytes, np.uint8)
+        img = cv2.imdecode(npimg, cv2.IMREAD_COLOR)
+        filename = 'captured.png'
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+        cv2.imwrite(filepath, img)
+    else:
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file uploaded'}), 400
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(filepath)
+            img = cv2.imread(filepath)
+        else:
+            return jsonify({'error': 'File type not allowed'}), 400
 
-        img = cv2.imread(filepath)
-        results = model.predict(img)
-
-        detections = []
-        for r in results:
+    results = model.predict(img)
+    detections = []
+    # Defensive: check if results is not empty and has boxes
+    for r in results:
+        # Use getattr for compatibility
+        names = getattr(r, 'names', getattr(model, 'names', []))
+        if hasattr(r, 'boxes') and r.boxes is not None:
             for box in r.boxes:
+                cls_idx = int(box.cls)
+                label = names[cls_idx] if names and cls_idx < len(names) else str(cls_idx)
+                conf = float(box.conf) if hasattr(box, 'conf') else 0.0
+                bbox = box.xyxy[0].tolist() if hasattr(box, 'xyxy') else []
                 detections.append({
-                    'class': r.names[int(box.cls)],
-                    'confidence': float(box.conf),
-                    'bbox': box.xyxy[0].tolist()
+                    'label': label,
+                    'confidence': round(conf * 100, 2),
+                    'bbox': bbox
                 })
 
-        return jsonify({
-            'original': url_for('static', filename=f"uploads/{filename}"),
-            'detections': detections
-        })
-
-    return jsonify({'error': 'File type not allowed'}), 400
+    return jsonify({
+        'original': url_for('static', filename=f"uploads/{filename}"),
+        'results': detections
+    })
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
