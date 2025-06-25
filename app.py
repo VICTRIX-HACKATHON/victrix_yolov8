@@ -13,7 +13,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-model_path = os.path.join(BASE_DIR, 'Trained Model', 'best.pt')
+model_path = os.path.join(BASE_DIR, 'Trained_Model', 'best.pt')
 model = YOLO(model_path)
 
 def allowed_file(filename):
