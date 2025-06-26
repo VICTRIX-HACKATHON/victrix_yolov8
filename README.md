@@ -15,7 +15,7 @@ Upload an image of a space station (or test with samples)
 The model will automatically detect objects
 View results of objects detected and their confidence scores
 
-<img src="static/images/web-app (1).png">
+
 
 <h3> # Model Details </h3>
 
